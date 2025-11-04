@@ -1,6 +1,7 @@
 import subprocess
 import logging
 import os
+from datetime import datetime
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field, validator
 from pydantic_settings import BaseSettings
@@ -9,12 +10,16 @@ import re
 # 환경 변수 설정
 class Settings(BaseSettings):
     script_path: str  # 기본값 제거 - 필수 값으로 설정
+    log_dir: str = "./logs"  # 로그 디렉토리 경로
 
     class Config:
         env_file = ".env"
         case_sensitive = False
 
 settings = Settings()
+
+# 로그 디렉토리 생성
+os.makedirs(settings.log_dir, exist_ok=True)
 
 # 로깅 설정
 logging.basicConfig(
@@ -72,19 +77,39 @@ async def diagnosis_application(request: DiagnosisRequest):
     script_path = settings.script_path
 
     try:
+        # 로그 파일 경로 생성 (일별)
+        date_str = datetime.now().strftime("%Y%m%d")
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        log_file_path = os.path.join(
+            settings.log_dir,
+            f"diagnosis_{date_str}.log"
+        )
+
+        # 로그 파일 열기 (append 모드)
+        log_file = open(log_file_path, 'a')
+
+        # 로그 구분을 위한 헤더 작성
+        log_file.write(f"\n{'='*80}\n")
+        log_file.write(f"[{timestamp}] Starting diagnosis for dataset: {dataset}\n")
+        log_file.write(f"{'='*80}\n\n")
+        log_file.flush()
+
         # 백그라운드로 스크립트 실행 (비동기 처리)
-        # Popen을 사용하여 프로세스를 시작하고 즉시 반환
+        # stdout과 stderr를 로그 파일로 리다이렉션
         process = subprocess.Popen(
             ["bash", script_path, dataset],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
+            stdout=log_file,
+            stderr=subprocess.STDOUT,  # stderr도 stdout으로 합침
             text=True
         )
 
-        logger.info(f"Started diagnosis script for dataset '{dataset}' with PID: {process.pid}")
+        logger.info(
+            f"Started diagnosis script for dataset '{dataset}' with PID: {process.pid}. "
+            f"Logs will be written to: {log_file_path}"
+        )
 
         return DiagnosisResponse(
-            message=f"Diagnosis application submitted for {dataset}"
+            message=f"Diagnosis application submitted for {dataset}. Check logs at: {log_file_path}"
         )
 
     except FileNotFoundError:
