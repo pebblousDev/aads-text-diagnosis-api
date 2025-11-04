@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  aads-text-diagnosis-api:
+    build: .
+    image: aads-text-diagnosis-api:latest
+    container_name: aads-text-diagnosis-api
+    ports:
+      - "13321:8000"  # 서버포트:컨테이너포트
+    volumes:
+      - /storage_data/projects:/storage_data/projects
+      - /pbls_data/projects:/pbls_data/projects
+      - ./.env:/app/.env  # .env 파일 마운트
+    restart: unless-stopped
+    environment:
+      - TZ=Asia/Seoul
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"

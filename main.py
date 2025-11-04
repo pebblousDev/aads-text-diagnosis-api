@@ -1,0 +1,106 @@
+import subprocess
+import logging
+import os
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel, Field, validator
+from pydantic_settings import BaseSettings
+import re
+
+# 환경 변수 설정
+class Settings(BaseSettings):
+    script_path: str  # 기본값 제거 - 필수 값으로 설정
+
+    class Config:
+        env_file = ".env"
+        case_sensitive = False
+
+settings = Settings()
+
+# 로깅 설정
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
+
+app = FastAPI(
+    title="Diagnosis Engine Text Dataset API",
+    description="API for executing diagnosis scripts on text datasets",
+    version="1.0.0"
+)
+
+
+class DiagnosisRequest(BaseModel):
+    dataset: str = Field(..., description="Dataset name to process")
+
+    @validator('dataset')
+    def validate_dataset(cls, v):
+        # 입력값 검증: 알파벳, 숫자, 언더스코어, 하이픈만 허용
+        if not re.match(r'^[a-zA-Z0-9_-]+$', v):
+            raise ValueError('Dataset name must contain only alphanumeric characters, underscores, and hyphens')
+        if len(v) > 100:
+            raise ValueError('Dataset name must be less than 100 characters')
+        return v
+
+
+class DiagnosisResponse(BaseModel):
+    message: str
+
+
+@app.get("/")
+async def root():
+    return {"status": "healthy", "service": "Diagnosis Engine Text Dataset API"}
+
+
+@app.get("/health")
+async def health_check():
+    return {"status": "ok"}
+
+
+@app.post("/diagnosis/application", response_model=DiagnosisResponse)
+async def diagnose_application(request: DiagnosisRequest):
+    """
+    비동기로 진단 스크립트를 실행합니다.
+
+    - **dataset**: 처리할 데이터셋 이름
+    """
+    dataset = request.dataset
+
+    logger.info(f"Received diagnosis application request for dataset: {dataset}")
+
+    # 환경 변수에서 쉘 스크립트 경로 가져오기
+    script_path = settings.script_path
+
+    try:
+        # 백그라운드로 스크립트 실행 (비동기 처리)
+        # Popen을 사용하여 프로세스를 시작하고 즉시 반환
+        process = subprocess.Popen(
+            ["bash", script_path, dataset],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True
+        )
+
+        logger.info(f"Started diagnosis script for dataset '{dataset}' with PID: {process.pid}")
+
+        return DiagnosisResponse(
+            message=f"Diagnosis application submitted for {dataset}"
+        )
+
+    except FileNotFoundError:
+        logger.error(f"Script not found at path: {script_path}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Diagnosis script not found at {script_path}"
+        )
+    except Exception as e:
+        logger.error(f"Error executing diagnosis script: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to execute diagnosis script: {str(e)}"
+        )
+
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
