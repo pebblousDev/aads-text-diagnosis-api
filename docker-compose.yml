@@ -11,8 +11,9 @@ services:
     volumes:
       - /storage_data/projects:/storage_data/projects
       - /pbls_data/projects:/pbls_data/projects
-      - /home/pbls_dev:/home/pbls_dev  # pbls_dev 홈 디렉토리 (conda 접근용)
-      - /opt/Wolfram:/opt/Wolfram:ro  # WolframScript 접근용 (읽기 전용)
+      - /home/pbls_dev:/home/pbls_dev  # pbls_dev 홈 디렉토리 (conda, .WolframEngine 접근용)
+      - /opt/Wolfram:/opt/Wolfram:ro  # WolframScript 접근용
+      - /usr/local/Wolfram:/usr/local/Wolfram:ro  # WolframEngine 접근용
       - /etc/alternatives:/etc/alternatives:ro  # 심볼릭 링크 참조용
       - /usr/bin/wolframscript:/usr/bin/wolframscript:ro  # wolframscript 심볼릭 링크
       - ./.env:/app/.env  # .env 파일 마운트

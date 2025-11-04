@@ -97,16 +97,17 @@ async def diagnosis_application(request: DiagnosisRequest):
         # 호스트 환경에서 스크립트 실행
         # nsenter로 호스트 네임스페이스에 진입하여 pbls_dev 사용자로 실행
         # --setuid, --setgid로 직접 UID/GID 지정
-        # HOME 환경 변수를 설정하고 로그인 쉘로 실행
+        # HOME과 MATHEMATICA_HOME 환경 변수 설정
         env = os.environ.copy()
         env['HOME'] = '/home/pbls_dev'
         env['USER'] = 'pbls_dev'
+        env['MATHEMATICA_HOME'] = '/usr/local/Wolfram/WolframEngine/14.3'
 
         process = subprocess.Popen([
             "nsenter", "-t", "1", "-u", "-i", "-n", "-p",
             "--setuid", "100001", "--setgid", "1003",
             "bash", "-c",
-            f"export HOME=/home/pbls_dev USER=pbls_dev && source /home/pbls_dev/.bashrc && cd /pbls_data/projects/dataclinic-diagnosis-engine/diagnosis && bash {script_path} {dataset}"
+            f"export HOME=/home/pbls_dev USER=pbls_dev MATHEMATICA_HOME=/usr/local/Wolfram/WolframEngine/14.3 && source /home/pbls_dev/.bashrc && cd /pbls_data/projects/dataclinic-diagnosis-engine/diagnosis && bash {script_path} {dataset}"
         ], stdout=log_file, stderr=subprocess.STDOUT, text=True, env=env)
 
         logger.info(
