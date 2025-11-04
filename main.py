@@ -94,21 +94,16 @@ async def diagnosis_application(request: DiagnosisRequest):
         log_file.write(f"{'='*80}\n\n")
         log_file.flush()
 
-        # 호스트 환경에서 스크립트 실행
-        # nsenter로 호스트 네임스페이스에 진입하여 pbls_dev 사용자로 실행
-        # --setuid, --setgid로 직접 UID/GID 지정
-        # HOME과 MATHEMATICA_HOME 환경 변수 설정
-        env = os.environ.copy()
-        env['HOME'] = '/home/pbls_dev'
-        env['USER'] = 'pbls_dev'
-        env['MATHEMATICA_HOME'] = '/usr/local/Wolfram/WolframEngine/14.3'
-
+        # SSH를 통해 호스트의 pbls_dev 사용자로 스크립트 실행
         process = subprocess.Popen([
-            "nsenter", "-t", "1", "-u", "-i", "-n", "-p",
-            "--setuid", "100001", "--setgid", "1003",
-            "bash", "-c",
-            f"export HOME=/home/pbls_dev USER=pbls_dev MATHEMATICA_HOME=/usr/local/Wolfram/WolframEngine/14.3 && source /home/pbls_dev/.bashrc && cd /pbls_data/projects/dataclinic-diagnosis-engine/diagnosis && bash {script_path} {dataset}"
-        ], stdout=log_file, stderr=subprocess.STDOUT, text=True, env=env)
+            "ssh",
+            "-i", "/root/.ssh/id_ed25519",
+            "-p", "401",
+            "-o", "StrictHostKeyChecking=no",
+            "-o", "UserKnownHostsFile=/dev/null",
+            "pbls_dev@127.0.0.1",
+            f"cd /pbls_data/projects/dataclinic-diagnosis-engine/diagnosis && bash {script_path} {dataset}"
+        ], stdout=log_file, stderr=subprocess.STDOUT, text=True)
 
         logger.info(
             f"Started diagnosis script for dataset '{dataset}' with PID: {process.pid}. "

@@ -5,7 +5,7 @@ WORKDIR /app
 # 시스템 의존성 설치
 RUN apt-get update && apt-get install -y \
     bash \
-    util-linux \
+    openssh-client \
     && rm -rf /var/lib/apt/lists/*
 
 # Python 의존성 복사 및 설치

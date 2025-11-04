@@ -5,17 +5,12 @@ services:
     build: .
     image: aads-text-diagnosis-api:latest
     container_name: aads-text-diagnosis-api
-    privileged: true  # nsenter로 호스트 네임스페이스 접근 허용
     ports:
       - "13321:8000"  # 서버포트:컨테이너포트
     volumes:
       - /storage_data/projects:/storage_data/projects
       - /pbls_data/projects:/pbls_data/projects
-      - /home/pbls_dev:/home/pbls_dev  # pbls_dev 홈 디렉토리 (conda, .WolframEngine 접근용)
-      - /opt/Wolfram:/opt/Wolfram:ro  # WolframScript 접근용
-      - /usr/local/Wolfram:/usr/local/Wolfram:ro  # WolframEngine 접근용
-      - /etc/alternatives:/etc/alternatives:ro  # 심볼릭 링크 참조용
-      - /usr/bin/wolframscript:/usr/bin/wolframscript:ro  # wolframscript 심볼릭 링크
+      - /home/pbls_dev/.ssh/id_ed25519:/root/.ssh/id_ed25519:ro  # SSH 키
       - ./.env:/app/.env  # .env 파일 마운트
       - ./logs:/app/logs  # 로그 디렉토리 마운트
     restart: unless-stopped
