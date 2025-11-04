@@ -95,17 +95,11 @@ async def diagnosis_application(request: DiagnosisRequest):
         log_file.flush()
 
         # 호스트 환경에서 스크립트 실행
-        # Docker를 통해 호스트의 pbls_dev 사용자로 실행
+        # nsenter로 호스트 네임스페이스에 진입하여 pbls_dev 사용자로 실행
         process = subprocess.Popen([
-            "docker", "run", "--rm",
-            "-u", "100001:1003",  # pbls_dev UID:GID
-            "-v", "/storage_data/projects:/storage_data/projects",
-            "-v", "/pbls_data/projects:/pbls_data/projects",
-            "-v", "/home/pbls_dev:/home/pbls_dev",
-            "-w", "/pbls_data/projects/dataclinic-diagnosis-engine/diagnosis",
-            "--network", "host",
-            "ubuntu:20.04",
-            "bash", script_path, dataset
+            "nsenter", "-t", "1", "-m", "-u", "-i", "-n", "-p",
+            "su", "-", "pbls_dev", "-c",
+            f"cd /pbls_data/projects/dataclinic-diagnosis-engine/diagnosis && bash {script_path} {dataset}"
         ], stdout=log_file, stderr=subprocess.STDOUT, text=True)
 
         logger.info(

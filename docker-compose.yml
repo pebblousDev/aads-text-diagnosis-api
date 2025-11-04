@@ -5,6 +5,7 @@ services:
     build: .
     image: aads-text-diagnosis-api:latest
     container_name: aads-text-diagnosis-api
+    privileged: true  # nsenter로 호스트 네임스페이스 접근 허용
     ports:
       - "13321:8000"  # 서버포트:컨테이너포트
     volumes:
@@ -12,8 +13,6 @@ services:
       - /pbls_data/projects:/pbls_data/projects
       - ./.env:/app/.env  # .env 파일 마운트
       - ./logs:/app/logs  # 로그 디렉토리 마운트
-      - /var/run/docker.sock:/var/run/docker.sock  # Docker 소켓 마운트
-      - /home/pbls_dev:/home/pbls_dev:ro  # pbls_dev 사용자 홈 디렉토리 (읽기 전용)
     restart: unless-stopped
     environment:
       - TZ=Asia/Seoul
