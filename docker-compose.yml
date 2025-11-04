@@ -16,6 +16,7 @@ services:
       - /usr/local/Wolfram:/usr/local/Wolfram:ro  # WolframEngine 접근용
       - /etc/alternatives:/etc/alternatives:ro  # 심볼릭 링크 참조용
       - /usr/bin/wolframscript:/usr/bin/wolframscript:ro  # wolframscript 심볼릭 링크
+      - /lib/x86_64-linux-gnu:/lib/x86_64-linux-gnu:ro  # 시스템 라이브러리 (libGL.so.1 등)
       - ./.env:/app/.env  # .env 파일 마운트
       - ./logs:/app/logs  # 로그 디렉토리 마운트
     restart: unless-stopped
