@@ -58,7 +58,7 @@ async def health_check():
 
 
 @app.post("/diagnosis/application", response_model=DiagnosisResponse)
-async def diagnose_application(request: DiagnosisRequest):
+async def diagnosis_application(request: DiagnosisRequest):
     """
     비동기로 진단 스크립트를 실행합니다.
 
