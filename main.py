@@ -94,14 +94,19 @@ async def diagnosis_application(request: DiagnosisRequest):
         log_file.write(f"{'='*80}\n\n")
         log_file.flush()
 
-        # 백그라운드로 스크립트 실행 (비동기 처리)
-        # stdout과 stderr를 로그 파일로 리다이렉션
-        process = subprocess.Popen(
-            ["bash", script_path, dataset],
-            stdout=log_file,
-            stderr=subprocess.STDOUT,  # stderr도 stdout으로 합침
-            text=True
-        )
+        # 호스트 환경에서 스크립트 실행
+        # Docker를 통해 호스트의 pbls_dev 사용자로 실행
+        process = subprocess.Popen([
+            "docker", "run", "--rm",
+            "-u", "100001:1003",  # pbls_dev UID:GID
+            "-v", "/storage_data/projects:/storage_data/projects",
+            "-v", "/pbls_data/projects:/pbls_data/projects",
+            "-v", "/home/pbls_dev:/home/pbls_dev",
+            "-w", "/pbls_data/projects/dataclinic-diagnosis-engine/diagnosis",
+            "--network", "host",
+            "ubuntu:20.04",
+            "bash", script_path, dataset
+        ], stdout=log_file, stderr=subprocess.STDOUT, text=True)
 
         logger.info(
             f"Started diagnosis script for dataset '{dataset}' with PID: {process.pid}. "
