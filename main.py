@@ -97,10 +97,11 @@ async def diagnosis_application(request: DiagnosisRequest):
         # 호스트 환경에서 스크립트 실행
         # nsenter로 호스트 네임스페이스에 진입하여 pbls_dev 사용자로 실행
         # --setuid, --setgid로 직접 UID/GID 지정
+        # -l 플래그로 로그인 쉘 환경 로드 (conda, wolframscript PATH 포함)
         process = subprocess.Popen([
             "nsenter", "-t", "1", "-m", "-u", "-i", "-n", "-p",
             "--setuid", "100001", "--setgid", "1003",
-            "bash", "-c",
+            "bash", "-l", "-c",
             f"cd /pbls_data/projects/dataclinic-diagnosis-engine/diagnosis && bash {script_path} {dataset}"
         ], stdout=log_file, stderr=subprocess.STDOUT, text=True)
 
