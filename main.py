@@ -101,7 +101,7 @@ async def diagnosis_application(request: DiagnosisRequest):
             "-p", "401",
             "-o", "StrictHostKeyChecking=no",
             "-o", "UserKnownHostsFile=/dev/null",
-            "pbls_dev@127.0.0.1",
+            "pbls_dev@host.docker.internal",
             f"cd /pbls_data/projects/dataclinic-diagnosis-engine/diagnosis && bash {script_path} {dataset}"
         ], stdout=log_file, stderr=subprocess.STDOUT, text=True)
 
