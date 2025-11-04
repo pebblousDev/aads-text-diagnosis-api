@@ -103,10 +103,10 @@ async def diagnosis_application(request: DiagnosisRequest):
         env['USER'] = 'pbls_dev'
 
         process = subprocess.Popen([
-            "nsenter", "-t", "1", "-m", "-u", "-i", "-n", "-p",
+            "nsenter", "-t", "1", "-u", "-i", "-n", "-p",
             "--setuid", "100001", "--setgid", "1003",
-            "bash", "-l", "-c",
-            f"cd /pbls_data/projects/dataclinic-diagnosis-engine/diagnosis && bash {script_path} {dataset}"
+            "bash", "-c",
+            f"export HOME=/home/pbls_dev USER=pbls_dev && source /home/pbls_dev/.bashrc && cd /pbls_data/projects/dataclinic-diagnosis-engine/diagnosis && bash {script_path} {dataset}"
         ], stdout=log_file, stderr=subprocess.STDOUT, text=True, env=env)
 
         logger.info(
