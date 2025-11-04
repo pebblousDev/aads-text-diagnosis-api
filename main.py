@@ -29,7 +29,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 app = FastAPI(
-    title="Diagnosis Engine Text Dataset API",
+    title="AADS Text Diagnosis API",
     description="API for executing diagnosis scripts on text datasets",
     version="1.0.0"
 )
