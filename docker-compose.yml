@@ -11,6 +11,7 @@ services:
     volumes:
       - /storage_data/projects:/storage_data/projects
       - /pbls_data/projects:/pbls_data/projects
+      - /home/pbls_dev:/home/pbls_dev  # pbls_dev 홈 디렉토리 (conda, wolframscript 접근용)
       - ./.env:/app/.env  # .env 파일 마운트
       - ./logs:/app/logs  # 로그 디렉토리 마운트
     restart: unless-stopped
