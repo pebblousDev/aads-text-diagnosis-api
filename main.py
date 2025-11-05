@@ -95,6 +95,10 @@ async def diagnosis_application(request: DiagnosisRequest):
         log_file.flush()
 
         # SSH를 통해 호스트의 pbls_dev 사용자로 스크립트 실행
+        # 스크립트의 디렉토리로 이동 후 실행
+        script_dir = os.path.dirname(script_path)
+        script_name = os.path.basename(script_path)
+
         process = subprocess.Popen([
             "ssh",
             "-i", "/root/.ssh/id_ed25519",
@@ -102,7 +106,7 @@ async def diagnosis_application(request: DiagnosisRequest):
             "-o", "StrictHostKeyChecking=no",
             "-o", "UserKnownHostsFile=/dev/null",
             "pbls_dev@host.docker.internal",
-            f"cd /pbls_data/projects/dataclinic-diagnosis-engine/diagnosis && bash {script_path} {dataset}"
+            f"cd {script_dir} && bash {script_name} {dataset}"
         ], stdout=log_file, stderr=subprocess.STDOUT, text=True)
 
         logger.info(
