@@ -10,6 +10,7 @@ import re
 # 환경 변수 설정
 class Settings(BaseSettings):
     script_path: str  # 기본값 제거 - 필수 값으로 설정
+    diet_script_path: str  # Diet 스크립트 경로
     log_dir: str = "./logs"  # 로그 디렉토리 경로
 
     class Config:
@@ -129,6 +130,76 @@ async def diagnosis_application(request: DiagnosisRequest):
         raise HTTPException(
             status_code=500,
             detail=f"Failed to execute diagnosis script: {str(e)}"
+        )
+
+
+@app.post("/diet/application", response_model=DiagnosisResponse)
+async def diet_application(request: DiagnosisRequest):
+    """
+    비동기로 Diet 스크립트를 실행합니다.
+
+    - **dataset**: 처리할 데이터셋 이름
+    """
+    dataset = request.dataset
+
+    logger.info(f"Received diet application request for dataset: {dataset}")
+
+    # 환경 변수에서 쉘 스크립트 경로 가져오기
+    script_path = settings.diet_script_path
+
+    try:
+        # 로그 파일 경로 생성 (일별)
+        date_str = datetime.now().strftime("%Y%m%d")
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        log_file_path = os.path.join(
+            settings.log_dir,
+            f"diet_{date_str}.log"
+        )
+
+        # 로그 파일 열기 (append 모드)
+        log_file = open(log_file_path, 'a')
+
+        # 로그 구분을 위한 헤더 작성
+        log_file.write(f"\n{'='*80}\n")
+        log_file.write(f"[{timestamp}] Starting diet for dataset: {dataset}\n")
+        log_file.write(f"{'='*80}\n\n")
+        log_file.flush()
+
+        # SSH를 통해 호스트의 pbls_dev 사용자로 스크립트 실행
+        # 스크립트의 디렉토리로 이동 후 실행
+        script_dir = os.path.dirname(script_path)
+        script_name = os.path.basename(script_path)
+
+        process = subprocess.Popen([
+            "ssh",
+            "-i", "/root/.ssh/id_ed25519",
+            "-p", "401",
+            "-o", "StrictHostKeyChecking=no",
+            "-o", "UserKnownHostsFile=/dev/null",
+            "pbls_dev@host.docker.internal",
+            f"cd {script_dir} && bash {script_name} {dataset}"
+        ], stdout=log_file, stderr=subprocess.STDOUT, text=True)
+
+        logger.info(
+            f"Started diet script for dataset '{dataset}' with PID: {process.pid}. "
+            f"Logs will be written to: {log_file_path}"
+        )
+
+        return DiagnosisResponse(
+            message=f"Diet application submitted for {dataset}. Check logs at: {log_file_path}"
+        )
+
+    except FileNotFoundError:
+        logger.error(f"Script not found at path: {script_path}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Diet script not found at {script_path}"
+        )
+    except Exception as e:
+        logger.error(f"Error executing diet script: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to execute diet script: {str(e)}"
         )
 
 
