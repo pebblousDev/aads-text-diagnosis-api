@@ -5,8 +5,9 @@ FastAPI 기반의 텍스트 데이터셋 진단 스크립트 실행 API 서버�
 ## 기능
 
 - POST `/diagnosis/application`: 진단 스크립트를 비동기로 실행
+- POST `/diet/application`: Diet 스크립트를 비동기로 실행
 - 입력값 검증
-- 로그 및 에러 처리
+- 일별 로그 파일 생성 및 에러 처리
 
 ## 요구사항
 
@@ -32,7 +33,13 @@ python main.py
 ```bash
 # .env 파일 생성
 cp .env.example .env
-# .env 파일 편집하여 SCRIPT_PATH 설정
+# .env 파일 편집하여 SCRIPT_PATH, DIET_SCRIPT_PATH 설정
+```
+
+**.env 파일 예시:**
+```
+SCRIPT_PATH=/pbls_data/projects/aads/dataclinic-diagnosis-engine/diagnosis/command_text.sh
+DIET_SCRIPT_PATH=/pbls_data/projects/aads/dataclinic-diagnosis-engine/diagnosis/command_diet.sh
 ```
 
 ### Setup 스크립트 사용
@@ -108,7 +115,28 @@ curl -X POST http://192.168.0.24:13321/diagnosis/application \
 **응답 예시:**
 ```json
 {
-  "message": "Diagnosis application submitted for my_dataset"
+  "message": "Diagnosis application submitted for my_dataset. Check logs at: ./logs/diagnosis_20251107.log"
+}
+```
+
+### Diet 신청
+
+```bash
+# 로컬
+curl -X POST http://localhost:8000/diet/application \
+  -H "Content-Type: application/json" \
+  -d '{"dataset": "my_dataset"}'
+
+# 서버 (포트포워딩 후)
+curl -X POST http://192.168.0.24:13321/diet/application \
+  -H "Content-Type: application/json" \
+  -d '{"dataset": "my_dataset"}'
+```
+
+**응답 예시:**
+```json
+{
+  "message": "Diet application submitted for my_dataset. Check logs at: ./logs/diet_20251107.log"
 }
 ```
 
@@ -141,8 +169,16 @@ curl -X POST http://192.168.0.24:13321/diagnosis/application \
 
 ## 로그
 
+### 애플리케이션 로그
 애플리케이션 로그는 표준 출력으로 출력되며, Docker 환경에서는 다음 명령으로 확인할 수 있습니다:
 
 ```bash
 docker logs aads-text-diagnosis-api
 ```
+
+### 실행 로그
+스크립트 실행 로그는 일별로 생성됩니다:
+- **진단 로그**: `./logs/diagnosis_YYYYMMDD.log`
+- **Diet 로그**: `./logs/diet_YYYYMMDD.log`
+
+로그 파일은 매일 자동으로 새로 생성되며, 같은 날짜에 여러 요청이 있을 경우 동일한 파일에 추가됩니다.
